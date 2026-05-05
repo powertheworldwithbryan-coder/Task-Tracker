@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Join workspace — Task Tracker</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .card { width: 100%; max-width: 460px; background: white; border-radius: 16px; padding: 40px 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; }
+  h1 { margin: 0 0 8px; font-size: 26px; color: #1a202c; }
+  .ws-name { font-size: 32px; font-weight: 700; color: #667eea; margin: 14px 0 18px;
+    padding: 16px; border-radius: 10px; background: #f7fafc; }
+  p { color: #4a5568; font-size: 15px; line-height: 1.5; }
+  button, .btn { display: inline-block; padding: 12px 24px; border: none; border-radius: 8px;
+    background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-size: 15px;
+    font-weight: 600; cursor: pointer; text-decoration: none; margin: 6px; }
+  .btn-secondary { background: #e2e8f0; color: #2d3748; }
+  .alert { padding: 14px; border-radius: 8px; background: #fed7d7; color: #822727; }
+</style>
+</head>
+<body>
+  <div class="card">
+    {% if error %}
+      <h1>Invite unavailable</h1>
+      <div class="alert">{{ error }}</div>
+      <div style="margin-top: 22px;"><a class="btn" href="/">Go home</a></div>
+    {% elif needs_login %}
+      <h1>You're invited!</h1>
+      <p>Join the workspace:</p>
+      <div class="ws-name">{{ workspace.name }}</div>
+      <p>Sign in or create an account to accept the invite.</p>
+      <a class="btn" href="{{ url_for('login_page') }}">Sign in</a>
+      <a class="btn btn-secondary" href="{{ url_for('signup_page') }}">Create account</a>
+    {% elif already %}
+      <h1>You're already in</h1>
+      <p>You already have access to <b>{{ workspace.name }}</b>.</p>
+      <a class="btn" href="/?ws={{ workspace.id }}">Open workspace</a>
+    {% else %}
+      <h1>Join workspace</h1>
+      <div class="ws-name">{{ workspace.name }}</div>
+      <p>Click below to accept the invite and join this shared workspace.</p>
+      <form method="POST">
+        <button type="submit">Accept and join</button>
+      </form>
+    {% endif %}
+  </div>
+</body>
+</html>

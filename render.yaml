@@ -1,0 +1,29 @@
+# Render blueprint for Task Tracker.
+# Visit https://dashboard.render.com/select-repo?type=blueprint and point at
+# this repo to provision the web service from this file.
+services:
+  - type: web
+    name: powertheworld
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: Task Tracker
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --threads 4 --timeout 60 --bind 0.0.0.0:$PORT
+    autoDeploy: true
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: APP_BASE_URL
+        value: https://powertheworld.onrender.com
+      - key: FLASK_SECRET_KEY
+        generateValue: true            # Render generates a strong random value
+      # Set these manually in the Render dashboard:
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: EMAIL_TEST_TO
+        sync: false
+      - key: DATABASE_URL
+        sync: false
