@@ -7,7 +7,6 @@ services:
     runtime: python
     region: oregon
     plan: free
-    rootDir: Task Tracker
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --workers 2 --threads 4 --timeout 60 --bind 0.0.0.0:$PORT
     autoDeploy: true
