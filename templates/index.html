@@ -538,12 +538,121 @@
     .toast-error   { background: var(--st-stuck); }
     .toast-info    { background: var(--primary); }
     @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+    /* ── Mobile Responsive ─────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      body { font-size: 13px; }
+
+      /* Header: tighter padding, smaller logo, allow wrapping */
+      .app-header {
+        padding: 0 12px; height: auto; min-height: 56px;
+        flex-wrap: wrap; gap: 8px; padding-top: 8px; padding-bottom: 8px;
+      }
+      .app-header h1 { font-size: 1rem; gap: 8px; }
+      .logo-dot { width: 24px; height: 24px; }
+      .header-actions { gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+      .ws-selector { max-width: 160px; padding: 7px 28px 7px 10px; font-size: .85rem; }
+      .icon-btn { width: 34px; height: 34px; font-size: 1rem; }
+
+      /* Container: minimal side padding */
+      .container { padding: 14px 12px; }
+
+      /* Tabs / nav strip wrap nicely */
+      .toolbar { gap: 8px; }
+      .toolbar input { min-width: 0; width: 100%; flex: 1 1 100%; }
+      .toolbar select { flex: 1 1 calc(50% - 4px); min-width: 0; }
+      .spacer { display: none; }
+      .toolbar .btn,
+      .toolbar .btn-primary { flex: 1 1 calc(50% - 4px); }
+
+      /* CTA full-width-ish */
+      .btn-cta { padding: 10px 18px; font-size: .92rem; }
+
+      /* Cards holding tables → horizontal scroll on mobile (override hidden) */
+      .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .task-table { min-width: 720px; }
+      .task-table th, .task-table td { padding: 10px 10px; font-size: .82rem; }
+
+      /* KPI grid: 2 columns on phones */
+      .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+      .kpi-card { padding: 14px 14px 14px 18px !important; }
+
+      /* Dashboard rows already collapse at 900px — confirm gap shrinks */
+      .dash-row { gap: 14px; margin-bottom: 14px; }
+
+      /* Analytics grid — 2 cols */
+      .analytics-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .stat-tile .stat-value { font-size: 1.3rem; }
+
+      /* Milestone tracker: stack vertically, drop the arrow clip-path */
+      .milestone { flex-direction: column; gap: 6px; box-shadow: none; border-radius: 0; }
+      .milestone-step,
+      .milestone-step:first-child,
+      .milestone-step:last-child,
+      .milestone-step:not(:last-child) {
+        clip-path: none !important; margin-right: 0 !important;
+        padding: 12px 14px !important; min-height: auto;
+        border-radius: var(--radius);
+        flex-direction: row; align-items: center; justify-content: space-between;
+      }
+      .milestone-step .ms-count { font-size: 1.2rem; }
+      .milestone-step .ms-label { margin-top: 0; }
+      .milestone-arrow { display: none; }
+      .milestone-side .pill-card { min-width: 0; flex: 1 1 calc(50% - 6px); padding: 10px 12px; }
+
+      /* Toolbar / daily header */
+      .daily-header { gap: 8px; }
+      .daily-header h2 { font-size: 1rem; flex: 1 1 100%; }
+      .daily-date-input { flex: 1 1 auto; }
+
+      /* Modal: nearly fullscreen */
+      .modal-overlay { padding: 8px; align-items: flex-end; }
+      .modal {
+        max-width: 100%; max-height: 95vh;
+        border-radius: 14px 14px 0 0;
+      }
+      .modal-header { padding: 14px 16px 12px; }
+      .modal-header h2 { font-size: 1rem; }
+      .modal-body { padding: 16px; gap: 14px; }
+      .modal-footer { padding: 12px 16px; }
+      .modal-footer .btn { flex: 1; }
+
+      /* Form rows stack on mobile */
+      .form-row, .form-row-3 { grid-template-columns: 1fr; gap: 12px; }
+
+      /* Settings modal body padding */
+      .settings-body { padding: 16px; }
+
+      /* Toast positioning */
+      #toast-container { right: 12px; left: 12px; bottom: 12px; }
+      .toast { min-width: 0; }
+
+      /* Status-bar row: tighter labels */
+      .status-bar-row .name { width: 80px; font-size: .78rem; }
+      .status-bar-row .count-label { width: 32px; font-size: .82rem; }
+
+      /* Subtask items */
+      .subtask-item { padding: 6px 8px; }
+
+      /* Pills slightly smaller */
+      .pill { min-width: 80px; padding: 4px 10px; font-size: .72rem; }
+      .pill-priority { min-width: 64px; }
+    }
+
+    /* Extra-small phones */
+    @media (max-width: 420px) {
+      .kpi-grid { grid-template-columns: 1fr !important; }
+      .analytics-grid { grid-template-columns: 1fr; }
+      .app-header h1 .app-title-text { display: none; }
+      .ws-selector { max-width: 130px; }
+      .btn-cta { width: 100%; justify-content: center; }
+    }
   </style>
 </head>
 <body>
 
 <header class="app-header">
-  <h1><span class="logo-dot"></span> Task Tracker</h1>
+  <h1><span class="logo-dot"></span> <span class="app-title-text">Task Tracker</span></h1>
   <div class="header-actions">
     <select id="ws-selector" class="ws-selector" onchange="onWorkspaceChange(this.value)" title="Switch workspace"></select>
     <button class="btn-cta" onclick="openModal()" title="Create a new task"><span class="cta-plus">+</span> New Task</button>
