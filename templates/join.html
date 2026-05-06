@@ -20,9 +20,34 @@
     font-weight: 600; cursor: pointer; text-decoration: none; margin: 6px; }
   .btn-secondary { background: #e2e8f0; color: #2d3748; }
   .alert { padding: 14px; border-radius: 8px; background: #fed7d7; color: #822727; }
+
+  /* Waking-up overlay (shown on slow form submits / link clicks) */
+  .wake-overlay {
+    position: fixed; inset: 0; background: rgba(15, 23, 42, .82);
+    color: white; display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 18px; z-index: 9999; backdrop-filter: blur(4px);
+    animation: wake-fade-in .25s ease-out;
+  }
+  .wake-overlay.active { display: flex; }
+  @keyframes wake-fade-in { from { opacity: 0; } to { opacity: 1; } }
+  .wake-spinner {
+    width: 48px; height: 48px; border: 4px solid rgba(255,255,255,.25);
+    border-top-color: white; border-radius: 50%;
+    animation: wake-spin 1s linear infinite;
+  }
+  @keyframes wake-spin { to { transform: rotate(360deg); } }
+  .wake-overlay h3 { font-size: 1.1rem; font-weight: 600; margin: 0; }
+  .wake-overlay p  { font-size: .85rem; opacity: .8; margin: 0; max-width: 320px; text-align: center; line-height: 1.5; }
+
 </style>
 </head>
 <body>
+  <div id="wake-overlay" class="wake-overlay">
+    <div class="wake-spinner"></div>
+    <h3>Waking up the server…</h3>
+    <p>Free hosting tier sleeps after 15 min idle. First request takes ~30 seconds while it spins up. Subsequent loads are instant.</p>
+  </div>
+
   <div class="card">
     {% if error %}
       <h1>Invite unavailable</h1>
@@ -48,5 +73,21 @@
       </form>
     {% endif %}
   </div>
+
+<script>
+  (function () {
+    const overlay = document.getElementById('wake-overlay');
+    if (!overlay) return;
+    let timer = null;
+    const arm = () => { timer = setTimeout(() => overlay.classList.add('active'), 2000); };
+    document.querySelectorAll('form').forEach(f => f.addEventListener('submit', arm));
+    document.querySelectorAll('a').forEach(a => {
+      if (a.target === '_blank' || a.href.startsWith('mailto:')) return;
+      a.addEventListener('click', arm);
+    });
+    window.addEventListener('pagehide', () => clearTimeout(timer));
+  })();
+</script>
+
 </body>
 </html>
