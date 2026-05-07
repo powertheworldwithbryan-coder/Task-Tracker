@@ -451,8 +451,9 @@
     .ta-chart-wrap {
       margin-top: 16px; position: relative; background: var(--bg);
       border-radius: 10px; padding: 14px; border: 1px solid var(--border);
+      max-width: 100%; overflow-x: auto;
     }
-    #ta-chart { width: 100%; height: 240px; display: block; }
+    #ta-chart { width: 100%; height: 240px; display: block; max-width: 1200px; margin: 0 auto; }
     .ta-bar { fill: var(--primary); transition: opacity .15s; cursor: pointer; }
     .ta-bar:hover { opacity: .75; }
     .ta-axis-label { font-size: 11px; fill: var(--muted); font-family: inherit; }
@@ -776,13 +777,18 @@
           <div class="ta-value" id="ta-total">0</div>
           <div class="ta-sub" id="ta-sub">All-time</div>
         </div>
+        <div class="task-analytics-total">
+          <div class="ta-label">7+ Days Old</div>
+          <div class="ta-value" id="ta-old-tasks">0</div>
+          <div class="ta-sub" id="ta-old-sub">Created before today</div>
+        </div>
         <div class="ta-toggle" role="tablist" aria-label="Bucket">
-          <button type="button" class="ta-toggle-btn active" data-bucket="day"  onclick="setTaToggle('day')">Day</button>
-          <button type="button" class="ta-toggle-btn"        data-bucket="week" onclick="setTaToggle('week')">Week</button>
+          <button type="button" class="ta-toggle-btn"        data-bucket="day"  onclick="setTaToggle('day')">Day</button>
+          <button type="button" class="ta-toggle-btn active" data-bucket="week" onclick="setTaToggle('week')">Week</button>
         </div>
       </div>
       <div class="ta-chart-wrap">
-        <svg id="ta-chart" viewBox="0 0 800 240" preserveAspectRatio="none"></svg>
+        <svg id="ta-chart" viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet"></svg>
         <div id="ta-empty" class="ta-empty" style="display:none">No tasks yet</div>
       </div>
     </div>
@@ -1274,7 +1280,7 @@ const STATUS_COLOR = {
   'Cancelled':           'var(--st-cancelled)'
 };
 
-let _taBucket = 'day';  // 'day' | 'week'
+let _taBucket = 'week';  // 'day' | 'week' (week is default)
 
 function setTaToggle(bucket) {
   if (bucket !== 'day' && bucket !== 'week') return;
@@ -1286,6 +1292,18 @@ function setTaToggle(bucket) {
 function renderAnalytics() {
   const total = allTasks.length;
   document.getElementById('ta-total').textContent = total;
+  
+  // Calculate tasks created 7+ days ago
+  const today = new Date(); today.setHours(0,0,0,0);
+  const sevenDaysAgo = new Date(today); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const oldTasks = allTasks.filter(t => {
+    if (!t.created_at) return false;
+    const tDate = new Date(t.created_at); tDate.setHours(0,0,0,0);
+    return tDate < sevenDaysAgo;
+  }).length;
+  document.getElementById('ta-old-tasks').textContent = oldTasks;
+  const oldPct = total > 0 ? ((oldTasks / total) * 100).toFixed(0) : 0;
+  document.getElementById('ta-old-sub').textContent = `${oldPct}% of all tasks`;
 
   const svg = document.getElementById('ta-chart');
   const empty = document.getElementById('ta-empty');
