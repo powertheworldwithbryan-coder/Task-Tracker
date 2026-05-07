@@ -430,9 +430,25 @@
       display: flex; align-items: center; justify-content: space-between; gap: 16px;
       margin-top: 12px; flex-wrap: wrap;
     }
+    .task-analytics-summary {
+      display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap;
+    }
     .task-analytics-total {
       padding: 10px 18px; border-radius: 12px; background: linear-gradient(135deg, #eef4ff 0%, #f7f9ff 100%);
       border: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; min-width: 160px;
+    }
+    .task-analytics-total.clickable {
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    .task-analytics-total.clickable:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 115, 234, .12);
+      border-color: #9cc8ff;
+    }
+    .task-analytics-total.clickable:focus-visible {
+      outline: 2px solid rgba(0, 115, 234, .4);
+      outline-offset: 2px;
     }
     .task-analytics-total .ta-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; color: var(--text-2); font-weight: 600; }
     .task-analytics-total .ta-value { font-size: 2rem; font-weight: 700; color: var(--primary); line-height: 1.05; }
@@ -772,15 +788,17 @@
     <div class="dash-card" style="margin-bottom:20px">
       <h3>Task Analytics <span class="small">creation throughput</span></h3>
       <div class="task-analytics-top">
-        <div class="task-analytics-total">
-          <div class="ta-label">Total Tasks</div>
-          <div class="ta-value" id="ta-total">0</div>
-          <div class="ta-sub" id="ta-sub">All-time</div>
-        </div>
-        <div class="task-analytics-total">
-          <div class="ta-label">7+ Days Old</div>
-          <div class="ta-value" id="ta-old-tasks">0</div>
-          <div class="ta-sub" id="ta-old-sub">Created before today</div>
+        <div class="task-analytics-summary">
+          <div class="task-analytics-total">
+            <div class="ta-label">Total Tasks</div>
+            <div class="ta-value" id="ta-total">0</div>
+            <div class="ta-sub" id="ta-sub">All-time</div>
+          </div>
+          <div class="task-analytics-total clickable" role="button" tabindex="0" title="View 7+ days old tasks" onclick="filterByQuick('old7')" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); filterByQuick('old7'); }">
+            <div class="ta-label">7+ Days Old</div>
+            <div class="ta-value" id="ta-old-tasks">0</div>
+            <div class="ta-sub" id="ta-old-sub">Click to view tasks</div>
+          </div>
         </div>
         <div class="ta-toggle" role="tablist" aria-label="Bucket">
           <button type="button" class="ta-toggle-btn"        data-bucket="day"  onclick="setTaToggle('day')">Day</button>
@@ -1087,7 +1105,7 @@ function filterByStatus(status) {
 }
 
 // Click a KPI tile → jump to All Tasks with the corresponding quick-filter applied.
-const QUICK_LABELS = { open: 'Open Tasks', today: 'Due Today', overdue: 'Overdue', urgent: 'Urgent (Critical + High)', done: 'Completed' };
+const QUICK_LABELS = { open: 'Open Tasks', today: 'Due Today', overdue: 'Overdue', urgent: 'Urgent (Critical + High)', done: 'Completed', old7: '7+ Days Old (by created date)' };
 function filterByQuick(kind) {
   // Reset other filters first so the quick filter is unambiguous.
   ['search-input', 'filter-pending', 'filter-category'].forEach(id => { document.getElementById(id).value = ''; });
@@ -1449,12 +1467,18 @@ function matchesQuick(t) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const todayStr = today.toISOString().slice(0, 10);
   const isFinal  = t.status === 'Done' || t.status === 'Cancelled';
+  const sevenDaysAgo = new Date(today); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   switch (quickFilter) {
     case 'open':    return !isFinal;
     case 'today':   return !isFinal && t.deadline === todayStr;
     case 'overdue': return !isFinal && t.deadline && t.deadline < todayStr;
     case 'urgent':  return !isFinal && (t.priority === 'Critical' || t.priority === 'High');
     case 'done':    return t.status === 'Done';
+    case 'old7': {
+      if (!t.created_at) return false;
+      const created = new Date(t.created_at); created.setHours(0, 0, 0, 0);
+      return created <= sevenDaysAgo;
+    }
     default:        return true;
   }
 }
