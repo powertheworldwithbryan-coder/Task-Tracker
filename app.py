@@ -746,7 +746,15 @@ def list_tasks():
                 else:
                     query  += f" AND {col} = ?";    params.append(v)
 
-        query += (" ORDER BY CASE priority WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 "
+        query += (" ORDER BY CASE status "
+                  "WHEN 'In Progress' THEN 1 "
+                  "WHEN 'Blocked - Technical' THEN 2 "
+                  "WHEN 'Dependent on Others' THEN 3 "
+                  "WHEN 'Not Started' THEN 4 "
+                  "WHEN 'Done' THEN 5 "
+                  "WHEN 'Stale' THEN 6 "
+                  "WHEN 'Cancelled' THEN 7 ELSE 8 END, "
+                  "CASE priority WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 "
                   "WHEN 'Medium' THEN 3 WHEN 'Low' THEN 4 ELSE 5 END, deadline ASC")
 
         rows = conn.execute(query, params).fetchall()

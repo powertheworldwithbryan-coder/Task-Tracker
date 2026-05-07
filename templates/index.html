@@ -921,6 +921,16 @@ const STATUS_CLASS = {
   'Cancelled':           'cancelled'
 };
 const STATUS_ORDER = ['Not Started', 'In Progress', 'Blocked - Technical', 'Dependent on Others', 'Stale', 'Done', 'Cancelled'];
+// Default ranking for sorting tasks: In Progress at top, Stale near the bottom
+const STATUS_SORT_RANK = {
+  'In Progress':         1,
+  'Blocked - Technical': 2,
+  'Dependent on Others': 3,
+  'Not Started':         4,
+  'Done':                5,
+  'Stale':               6,
+  'Cancelled':           7
+};
 // Linear milestone path (left → right) and the side-track bucket
 const MILESTONE_PATH = ['Not Started', 'In Progress', 'Done'];
 const SIDE_STATUSES  = ['Blocked - Technical', 'Dependent on Others', 'Stale', 'Cancelled'];
@@ -1343,7 +1353,7 @@ function renderTasks() {
 
 // ── Sorting helpers ──────────────────────────────────────────────────
 const PRIORITY_RANK = { 'Critical': 0, 'High': 1, 'Medium': 2, 'Low': 3 };
-const STATUS_RANK   = Object.fromEntries(STATUS_ORDER.map((s, i) => [s, i]));
+const STATUS_RANK   = STATUS_SORT_RANK;
 
 function sortValue(task, key) {
   const v = task[key];
