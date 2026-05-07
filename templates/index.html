@@ -425,6 +425,44 @@
     .stat-tile .stat-value { font-size: 1.6rem; font-weight: 700; color: var(--text); line-height: 1.1; }
     .stat-tile .stat-sub   { font-size: .72rem; color: var(--muted); }
 
+    /* New Task Analytics: total + chart with day/week toggle */
+    .task-analytics-top {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      margin-top: 12px; flex-wrap: wrap;
+    }
+    .task-analytics-total {
+      padding: 10px 18px; border-radius: 12px; background: linear-gradient(135deg, #eef4ff 0%, #f7f9ff 100%);
+      border: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; min-width: 160px;
+    }
+    .task-analytics-total .ta-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; color: var(--text-2); font-weight: 600; }
+    .task-analytics-total .ta-value { font-size: 2rem; font-weight: 700; color: var(--primary); line-height: 1.05; }
+    .task-analytics-total .ta-sub   { font-size: .72rem; color: var(--muted); }
+    .ta-toggle {
+      display: inline-flex; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 99px; padding: 3px; gap: 2px;
+    }
+    .ta-toggle-btn {
+      border: none; background: transparent; cursor: pointer;
+      padding: 6px 18px; border-radius: 99px; font-size: .82rem; font-weight: 600;
+      color: var(--text-2); font-family: inherit; transition: all .15s;
+    }
+    .ta-toggle-btn:hover { color: var(--primary); }
+    .ta-toggle-btn.active { background: var(--primary); color: #fff; box-shadow: 0 2px 6px rgba(0,115,234,.25); }
+    .ta-chart-wrap {
+      margin-top: 16px; position: relative; background: var(--bg);
+      border-radius: 10px; padding: 14px; border: 1px solid var(--border);
+    }
+    #ta-chart { width: 100%; height: 240px; display: block; }
+    .ta-bar { fill: var(--primary); transition: opacity .15s; cursor: pointer; }
+    .ta-bar:hover { opacity: .75; }
+    .ta-axis-label { font-size: 11px; fill: var(--muted); font-family: inherit; }
+    .ta-grid-line { stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 3; }
+    .ta-bar-label { font-size: 11px; fill: var(--text-2); font-family: inherit; font-weight: 600; }
+    .ta-empty {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: .9rem;
+    }
+
     /* Status-distribution stacked bar */
     .status-bar {
       display: flex; height: 24px; border-radius: 99px; overflow: hidden;
@@ -516,7 +554,7 @@
     .field-wrap > input,
     .field-wrap > select { width: 100%; padding-right: 56px; }
     .field-wrap.no-chevron > input { padding-right: 34px; }
-    .field-wrap > input[type="date"] { padding-right: 38px; }
+    .field-wrap > input[type="date"] { padding-right: 60px; }
     .field-clear {
       position: absolute; right: 30px; top: 50%; transform: translateY(-50%);
       background: transparent; border: none; cursor: pointer; padding: 4px;
@@ -524,9 +562,10 @@
       color: var(--muted); font-size: .9rem; display: none;
       align-items: center; justify-content: center;
       transition: background .15s, color .15s;
+      z-index: 2;
     }
     .field-wrap.no-chevron .field-clear { right: 8px; }
-    .field-wrap > input[type="date"] ~ .field-clear { right: 32px; }
+    .field-wrap.is-date .field-clear { right: 32px; }
     .field-wrap.has-value .field-clear { display: inline-flex; }
     .field-clear:hover { background: var(--bg); color: var(--st-stuck); }
     /* Chevron arrow on combobox-style inputs (pending / requester) to mimic <select> */
@@ -730,41 +769,22 @@
     </div>
 
     <div class="dash-card" style="margin-bottom:20px">
-      <h3>Task Analytics <span class="small">distribution &amp; throughput</span></h3>
-      <div class="analytics-grid">
-        <div class="stat-tile">
-          <div class="stat-label">Total Tasks</div>
-          <div class="stat-value" id="an-total">0</div>
-          <div class="stat-sub">All-time</div>
+      <h3>Task Analytics <span class="small">creation throughput</span></h3>
+      <div class="task-analytics-top">
+        <div class="task-analytics-total">
+          <div class="ta-label">Total Tasks</div>
+          <div class="ta-value" id="ta-total">0</div>
+          <div class="ta-sub" id="ta-sub">All-time</div>
         </div>
-        <div class="stat-tile" style="border-left:4px solid var(--st-done)">
-          <div class="stat-label">Completion Rate</div>
-          <div class="stat-value" id="an-rate">0%</div>
-          <div class="stat-sub" id="an-rate-sub">Done ÷ (Total − Cancelled)</div>
-        </div>
-        <div class="stat-tile" style="border-left:4px solid var(--primary)">
-          <div class="stat-label">Avg Turnaround</div>
-          <div class="stat-value" id="an-avg">—</div>
-          <div class="stat-sub" id="an-avg-sub">Created → Done</div>
-        </div>
-        <div class="stat-tile" style="border-left:4px solid #a25ddc">
-          <div class="stat-label">Median Turnaround</div>
-          <div class="stat-value" id="an-median">—</div>
-          <div class="stat-sub">Typical task</div>
-        </div>
-        <div class="stat-tile" style="border-left:4px solid var(--st-working)">
-          <div class="stat-label">On-Time Rate</div>
-          <div class="stat-value" id="an-ontime">—</div>
-          <div class="stat-sub" id="an-ontime-sub">Done by deadline</div>
-        </div>
-        <div class="stat-tile" style="border-left:4px solid var(--st-stuck)">
-          <div class="stat-label">Aging Open Tasks</div>
-          <div class="stat-value" id="an-aging">0</div>
-          <div class="stat-sub">Open &gt; 14 days</div>
+        <div class="ta-toggle" role="tablist" aria-label="Bucket">
+          <button type="button" class="ta-toggle-btn active" data-bucket="day"  onclick="setTaToggle('day')">Day</button>
+          <button type="button" class="ta-toggle-btn"        data-bucket="week" onclick="setTaToggle('week')">Week</button>
         </div>
       </div>
-      <div class="status-bar" id="an-status-bar"></div>
-      <div class="status-legend" id="an-status-legend"></div>
+      <div class="ta-chart-wrap">
+        <svg id="ta-chart" viewBox="0 0 800 240" preserveAspectRatio="none"></svg>
+        <div id="ta-empty" class="ta-empty" style="display:none">No tasks yet</div>
+      </div>
     </div>
 
     <div class="dash-row">
@@ -862,12 +882,12 @@
         </div>
       </div>
       <div class="form-row-3">
-        <div class="form-group"><label>Status</label>
+        <div class="form-group"><label>Status *</label>
           <select id="f-status" onchange="onStatusChange()">
             <option>Not Started</option><option>In Progress</option><option>Blocked - Technical</option><option>Dependent on Others</option><option>Stale</option><option>Done</option><option>Cancelled</option>
           </select>
         </div>
-        <div class="form-group"><label>Priority</label>
+        <div class="form-group"><label>Priority *</label>
           <select id="f-priority">
             <option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option>
           </select>
@@ -893,8 +913,8 @@
           </div>
         </div>
         <div class="form-group"><label>Deadline</label>
-          <div class="field-wrap no-chevron">
-            <input type="date" id="f-deadline" oninput="updateFieldClear(this)" />
+          <div class="field-wrap is-date">
+            <input type="date" id="f-deadline" oninput="updateFieldClear(this)" onchange="updateFieldClear(this)" />
             <button type="button" class="field-clear" onclick="clearField('f-deadline')" title="Clear">✕</button>
           </div>
         </div>
@@ -1254,85 +1274,124 @@ const STATUS_COLOR = {
   'Cancelled':           'var(--st-cancelled)'
 };
 
+let _taBucket = 'day';  // 'day' | 'week'
+
+function setTaToggle(bucket) {
+  if (bucket !== 'day' && bucket !== 'week') return;
+  _taBucket = bucket;
+  document.querySelectorAll('.ta-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.bucket === bucket));
+  renderAnalytics();
+}
+
 function renderAnalytics() {
   const total = allTasks.length;
-  const counts = Object.fromEntries(STATUS_ORDER.map(s => [s, 0]));
-  let oldestOpenDays = 0, agingOpen = 0;
-  const turnaroundDays = [];   // fully completed tasks
-  let onTime = 0, lateOrUntimed = 0;
-  const now = Date.now();
-  const DAY = 24 * 60 * 60 * 1000;
+  document.getElementById('ta-total').textContent = total;
 
-  for (const t of allTasks) {
-    if (counts[t.status] !== undefined) counts[t.status]++;
-    const isFinal = t.status === 'Done' || t.status === 'Cancelled';
+  const svg = document.getElementById('ta-chart');
+  const empty = document.getElementById('ta-empty');
+  if (!svg) return;
 
-    // Aging open tasks (open > 14 days since creation)
-    if (!isFinal && t.created_at) {
-      const ageDays = (now - new Date(t.created_at).getTime()) / DAY;
-      if (ageDays > 14) agingOpen++;
-      if (ageDays > oldestOpenDays) oldestOpenDays = ageDays;
-    }
-
-    // Turnaround for completed tasks
-    if (t.status === 'Done' && t.created_at && t.completed_at) {
-      const days = (new Date(t.completed_at).getTime() - new Date(t.created_at).getTime()) / DAY;
-      if (days >= 0) turnaroundDays.push(days);
-      // On-time check
-      if (t.deadline) {
-        const dl = new Date(t.deadline + 'T23:59:59').getTime();
-        if (new Date(t.completed_at).getTime() <= dl) onTime++;
-        else lateOrUntimed++;
-      }
-    }
-  }
-
-  const done      = counts['Done'];
-  const cancelled = counts['Cancelled'];
-  const denom     = total - cancelled;
-  const compRate  = denom > 0 ? Math.round((done / denom) * 100) : 0;
-
-  const fmtDays = d => d == null ? '—' : (d < 1 ? `${(d * 24).toFixed(1)} hr` : `${d.toFixed(1)} d`);
-  const avg = turnaroundDays.length ? turnaroundDays.reduce((a, b) => a + b, 0) / turnaroundDays.length : null;
-  const sorted = [...turnaroundDays].sort((a, b) => a - b);
-  const median = sorted.length
-    ? (sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2)
-    : null;
-
-  const totalScored = onTime + lateOrUntimed;
-  const onTimeRate = totalScored ? Math.round((onTime / totalScored) * 100) : null;
-
-  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  setText('an-total',  total);
-  setText('an-rate',   compRate + '%');
-  setText('an-rate-sub', `${done} done · ${denom} eligible`);
-  setText('an-avg',    fmtDays(avg));
-  setText('an-avg-sub', turnaroundDays.length ? `from ${turnaroundDays.length} completed` : 'no data yet');
-  setText('an-median', fmtDays(median));
-  setText('an-ontime', onTimeRate == null ? '—' : onTimeRate + '%');
-  setText('an-ontime-sub', totalScored ? `${onTime} of ${totalScored} with deadlines` : 'no deadline data');
-  setText('an-aging',  agingOpen);
-
-  // Stacked status distribution bar
-  const bar = document.getElementById('an-status-bar');
-  const legend = document.getElementById('an-status-legend');
-  if (!bar || !legend) return;
   if (!total) {
-    bar.innerHTML = '<div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:.78rem">No tasks yet</div>';
-    legend.innerHTML = '';
+    svg.innerHTML = '';
+    empty.style.display = 'flex';
+    document.getElementById('ta-sub').textContent = 'No tasks yet';
     return;
   }
-  bar.innerHTML = STATUS_ORDER.map(st => {
-    const n = counts[st];
-    if (!n) return '';
-    const pct = (n / total) * 100;
-    return `<div class="seg" title="${st}: ${n} (${pct.toFixed(1)}%)" style="flex:${n}; background:${STATUS_COLOR[st]}" onclick="filterByStatus('${escHtmlAttr(st)}')"></div>`;
+  empty.style.display = 'none';
+
+  // Bucket tasks by created_at
+  const isWeek = _taBucket === 'week';
+  const N = isWeek ? 12 : 30;  // 12 weeks (~3 months) or 30 days
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const buckets = [];
+  for (let i = N - 1; i >= 0; i--) {
+    const d = new Date(today);
+    if (isWeek) {
+      // Align to Monday of that week (i weeks back)
+      d.setDate(d.getDate() - i * 7);
+      const dow = (d.getDay() + 6) % 7;  // Mon=0
+      d.setDate(d.getDate() - dow);
+    } else {
+      d.setDate(d.getDate() - i);
+    }
+    buckets.push({ key: d.toISOString().slice(0, 10), date: new Date(d), count: 0 });
+  }
+  const keyToIdx = Object.fromEntries(buckets.map((b, i) => [b.key, i]));
+
+  for (const t of allTasks) {
+    if (!t.created_at) continue;
+    const d = new Date(t.created_at); d.setHours(0,0,0,0);
+    let key;
+    if (isWeek) {
+      const dow = (d.getDay() + 6) % 7;
+      d.setDate(d.getDate() - dow);
+      key = d.toISOString().slice(0, 10);
+    } else {
+      key = d.toISOString().slice(0, 10);
+    }
+    if (keyToIdx[key] != null) buckets[keyToIdx[key]].count++;
+  }
+
+  const totalInRange = buckets.reduce((a, b) => a + b.count, 0);
+  document.getElementById('ta-sub').textContent = isWeek
+    ? `Last ${N} weeks · ${totalInRange} created`
+    : `Last ${N} days · ${totalInRange} created`;
+
+  // Render SVG bars
+  const W = 800, H = 240, padL = 36, padR = 12, padT = 12, padB = 36;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const maxCount = Math.max(1, ...buckets.map(b => b.count));
+  // Round up to a "nice" max for grid
+  const niceMax = niceCeil(maxCount);
+  const barW = innerW / buckets.length * 0.78;
+  const stepX = innerW / buckets.length;
+
+  // Y-axis grid (4 lines)
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(f => {
+    const y = padT + innerH * (1 - f);
+    const v = Math.round(niceMax * f);
+    return `<line class="ta-grid-line" x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" />
+            <text class="ta-axis-label" x="${padL - 6}" y="${y + 4}" text-anchor="end">${v}</text>`;
   }).join('');
-  legend.innerHTML = STATUS_ORDER.filter(st => counts[st]).map(st => {
-    const n = counts[st];
-    const pct = (n / total) * 100;
-    return `<span class="item" onclick="filterByStatus('${escHtmlAttr(st)}')" title="Filter All Tasks by ${escHtmlAttr(st)}"><span class="swatch" style="background:${STATUS_COLOR[st]}"></span>${escHtml(st)} <span class="count">${n} (${pct.toFixed(0)}%)</span></span>`;
+
+  // Bars + x-axis labels
+  const labelEvery = Math.ceil(buckets.length / (isWeek ? 12 : 6));
+  const bars = buckets.map((b, i) => {
+    const x = padL + i * stepX + (stepX - barW) / 2;
+    const h = (b.count / niceMax) * innerH;
+    const y = padT + innerH - h;
+    const showLabel = (i % labelEvery === 0) || (i === buckets.length - 1);
+    const fmt = isWeek
+      ? `${b.date.getMonth() + 1}/${b.date.getDate()}`
+      : `${b.date.getMonth() + 1}/${b.date.getDate()}`;
+    const tooltip = isWeek
+      ? `Week of ${fmt}: ${b.count} task${b.count===1?'':'s'}`
+      : `${fmt}: ${b.count} task${b.count===1?'':'s'}`;
+    const valLabel = b.count > 0 ? `<text class="ta-bar-label" x="${x + barW/2}" y="${y - 4}" text-anchor="middle">${b.count}</text>` : '';
+    const xLabel = showLabel ? `<text class="ta-axis-label" x="${x + barW/2}" y="${H - padB + 16}" text-anchor="middle">${fmt}</text>` : '';
+    return `
+      <rect class="ta-bar" x="${x}" y="${y}" width="${barW}" height="${h}" rx="3"><title>${tooltip}</title></rect>
+      ${valLabel}
+      ${xLabel}`;
   }).join('');
+
+  svg.innerHTML = gridLines + bars;
+}
+
+// Round up to a nice axis maximum
+function niceCeil(v) {
+  if (v <= 5) return 5;
+  if (v <= 10) return 10;
+  const pow = Math.pow(10, Math.floor(Math.log10(v)));
+  const n = v / pow;
+  let nice;
+  if (n <= 1)      nice = 1;
+  else if (n <= 2) nice = 2;
+  else if (n <= 5) nice = 5;
+  else             nice = 10;
+  return nice * pow;
 }
 
 // ── Fetch All Tasks ──────────────────────────────────────────────────
@@ -1640,12 +1699,16 @@ function removeSubtask(i) { editingSubtasks.splice(i, 1); renderSubtasks(); }
 
 async function saveTask() {
   const title = document.getElementById('f-title').value.trim();
-  if (!title) { document.getElementById('f-title').focus(); return; }
+  if (!title) { showToast('Title is required', 'error'); document.getElementById('f-title').focus(); return; }
+  const status   = document.getElementById('f-status').value;
+  const priority = document.getElementById('f-priority').value;
+  if (!status)   { showToast('Status is required', 'error');   document.getElementById('f-status').focus();   return; }
+  if (!priority) { showToast('Priority is required', 'error'); document.getElementById('f-priority').focus(); return; }
 
   const payload = {
     title,
-    status:     document.getElementById('f-status').value,
-    priority:   document.getElementById('f-priority').value,
+    status,
+    priority,
     category:   document.getElementById('f-category').value.trim(),
     pending_on: document.getElementById('f-pending').value.trim(),
     requester:  document.getElementById('f-requester').value.trim(),
