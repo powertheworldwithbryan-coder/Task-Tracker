@@ -511,6 +511,31 @@
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 
+    /* Field with optional clear (✕) button + optional chevron — looks like a select */
+    .field-wrap { position: relative; }
+    .field-wrap > input,
+    .field-wrap > select { width: 100%; padding-right: 56px; }
+    .field-wrap.no-chevron > input { padding-right: 34px; }
+    .field-wrap > input[type="date"] { padding-right: 38px; }
+    .field-clear {
+      position: absolute; right: 30px; top: 50%; transform: translateY(-50%);
+      background: transparent; border: none; cursor: pointer; padding: 4px;
+      width: 22px; height: 22px; border-radius: 50%; line-height: 1;
+      color: var(--muted); font-size: .9rem; display: none;
+      align-items: center; justify-content: center;
+      transition: background .15s, color .15s;
+    }
+    .field-wrap.no-chevron .field-clear { right: 8px; }
+    .field-wrap > input[type="date"] ~ .field-clear { right: 32px; }
+    .field-wrap.has-value .field-clear { display: inline-flex; }
+    .field-clear:hover { background: var(--bg); color: var(--st-stuck); }
+    /* Chevron arrow on combobox-style inputs (pending / requester) to mimic <select> */
+    .field-wrap.with-chevron::after {
+      content: ''; position: absolute; right: 12px; top: 50%; width: 10px; height: 6px;
+      transform: translateY(-50%); pointer-events: none;
+      background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23676879' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>") no-repeat center / contain;
+    }
+
     /* Subtasks UI */
     .subtask-list { display: flex; flex-direction: column; gap: 6px; }
     .subtask-item {
@@ -831,7 +856,10 @@
     <div class="modal-body">
       <div class="form-group">
         <label>Task Title *</label>
-        <input type="text" id="f-title" placeholder="Describe the task…" />
+        <div class="field-wrap no-chevron">
+          <input type="text" id="f-title" placeholder="Describe the task…" oninput="updateFieldClear(this)" />
+          <button type="button" class="field-clear" onclick="clearField('f-title')" title="Clear">✕</button>
+        </div>
       </div>
       <div class="form-row-3">
         <div class="form-group"><label>Status</label>
@@ -851,15 +879,24 @@
       </div>
       <div class="form-row-3">
         <div class="form-group"><label>Pending On</label>
-          <input type="text" id="f-pending" placeholder="Person/team blocking" list="pending-suggestions" />
-          <datalist id="pending-suggestions"></datalist>
+          <div class="field-wrap with-chevron">
+            <input type="text" id="f-pending" placeholder="Person/team blocking" list="pending-suggestions" oninput="updateFieldClear(this)" />
+            <button type="button" class="field-clear" onclick="clearField('f-pending')" title="Clear">✕</button>
+            <datalist id="pending-suggestions"></datalist>
+          </div>
         </div>
         <div class="form-group"><label>Requester</label>
-          <input type="text" id="f-requester" placeholder="Who asked" list="requester-suggestions" />
-          <datalist id="requester-suggestions"></datalist>
+          <div class="field-wrap with-chevron">
+            <input type="text" id="f-requester" placeholder="Who asked" list="requester-suggestions" oninput="updateFieldClear(this)" />
+            <button type="button" class="field-clear" onclick="clearField('f-requester')" title="Clear">✕</button>
+            <datalist id="requester-suggestions"></datalist>
+          </div>
         </div>
         <div class="form-group"><label>Deadline</label>
-          <input type="date" id="f-deadline" />
+          <div class="field-wrap no-chevron">
+            <input type="date" id="f-deadline" oninput="updateFieldClear(this)" />
+            <button type="button" class="field-clear" onclick="clearField('f-deadline')" title="Clear">✕</button>
+          </div>
         </div>
       </div>
       <div class="form-group">
@@ -1514,6 +1551,12 @@ function openModal(task = null) {
   document.getElementById('f-links').value     = task?.links      || '';
   document.getElementById('f-remarks').value   = task?.remarks    || '';
 
+  // Refresh clear-button visibility for fields that have wraps
+  ['f-title', 'f-pending', 'f-requester', 'f-deadline'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) updateFieldClear(el);
+  });
+
   // Reminder frequency
   const freq = task?.reminder_frequency || '';
   document.querySelectorAll('input[name="reminder_freq"]').forEach(r => { r.checked = (r.value === freq); });
@@ -1536,6 +1579,20 @@ function openModal(task = null) {
 
 function closeModal() { document.getElementById('task-modal').classList.remove('open'); }
 function closeModalOnOverlay(e) { if (e.target === document.getElementById('task-modal')) closeModal(); }
+
+// Toggle the ✕ clear button visibility based on whether the input has a value
+function updateFieldClear(input) {
+  const wrap = input.closest('.field-wrap');
+  if (!wrap) return;
+  wrap.classList.toggle('has-value', !!input.value);
+}
+function clearField(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = '';
+  updateFieldClear(el);
+  el.focus();
+}
 
 // Show/hide reminder group based on selected status
 function updateReminderVisibility() {
