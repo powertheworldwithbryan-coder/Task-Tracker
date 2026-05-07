@@ -167,7 +167,24 @@
     .reminder-box .icon { font-size: 1.5rem; flex-shrink: 0; }
     .reminder-box h3 { color: var(--pr-critical); font-size: .95rem; margin-bottom: 8px; font-weight: 600; }
     .reminder-items { list-style: none; display: flex; flex-direction: column; gap: 5px; }
-    .reminder-items li { font-size: .875rem; color: #7a1f29; }
+    .reminder-items li { font-size: .875rem; color: #7a1f29; display: flex; align-items: center; gap: 6px; }
+    .reminder-items li .reminder-text { flex: 1; }
+    .reminder-dismiss {
+      background: transparent; border: none; cursor: pointer; color: #b74858;
+      font-size: 1rem; padding: 2px 8px; border-radius: 6px; line-height: 1;
+      transition: background .15s, color .15s;
+    }
+    .reminder-dismiss:hover { background: #ffd0d0; color: var(--pr-critical); }
+    .reminder-header-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;
+    }
+    .reminder-header-row h3 { margin-bottom: 0; }
+    .reminder-dismiss-all {
+      background: transparent; border: 1px solid #ffb3b3; color: var(--pr-critical);
+      cursor: pointer; padding: 4px 12px; border-radius: 99px; font-size: .78rem; font-weight: 600;
+      transition: background .15s, color .15s;
+    }
+    .reminder-dismiss-all:hover { background: var(--pr-critical); color: #fff; border-color: var(--pr-critical); }
 
     /* ── Tabs ───────────────────────────────────────────────────────── */
     .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
@@ -1035,24 +1052,67 @@ function resetFilters() {
 }
 
 // ── Reminders ────────────────────────────────────────────────────────
+const REMINDER_DISMISS_KEY = 'tt_reminder_dismissed';
+
+function getDismissedReminders() {
+  try {
+    const raw = localStorage.getItem(REMINDER_DISMISS_KEY);
+    if (!raw) return { date: '', ids: [] };
+    const obj = JSON.parse(raw);
+    const today = new Date().toISOString().slice(0, 10);
+    if (obj.date !== today) return { date: today, ids: [] };
+    return { date: obj.date, ids: Array.isArray(obj.ids) ? obj.ids : [] };
+  } catch (e) { return { date: '', ids: [] }; }
+}
+
+function saveDismissedReminders(ids) {
+  const today = new Date().toISOString().slice(0, 10);
+  localStorage.setItem(REMINDER_DISMISS_KEY, JSON.stringify({ date: today, ids }));
+}
+
+function dismissReminder(id) {
+  const { ids } = getDismissedReminders();
+  if (!ids.includes(id)) ids.push(id);
+  saveDismissedReminders(ids);
+  loadReminders();
+}
+
+function dismissAllReminders() {
+  if (!_lastReminderIds || !_lastReminderIds.length) return;
+  saveDismissedReminders(_lastReminderIds.slice());
+  loadReminders();
+  showToast('Reminders dismissed for today', 'info');
+}
+
+let _lastReminderIds = [];
+
 async function loadReminders() {
   try {
     const res  = await fetch(`${API}/reminders`);
     const data = await res.json();
     const el   = document.getElementById('reminder-banner');
-    if (!data.length) { el.innerHTML = ''; return; }
+    _lastReminderIds = data.map(t => t.id);
+    const dismissed = new Set(getDismissedReminders().ids);
+    const visible = data.filter(t => !dismissed.has(t.id));
+    if (!visible.length) { el.innerHTML = ''; return; }
     el.innerHTML = `
       <div class="reminder-box">
         <div class="icon">🔔</div>
         <div style="flex:1">
-          <h3>${data.length} Task${data.length>1?'s':''} Due Today</h3>
+          <div class="reminder-header-row">
+            <h3>${visible.length} Task${visible.length>1?'s':''} Due Today</h3>
+            <button class="reminder-dismiss-all" onclick="dismissAllReminders()" title="Hide these reminders until tomorrow">Dismiss all</button>
+          </div>
           <ul class="reminder-items">
-            ${data.map(t => `
+            ${visible.map(t => `
               <li>
-                <span class="pill pill-priority pill-${t.priority.toLowerCase()}">${t.priority}</span>
-                &nbsp;${escHtml(t.title)}
-                ${t.deadline ? ` — due <b>${formatDate(t.deadline)}</b>` : ''}
-                ${t.pending_on ? ` · ${escHtml(t.pending_on)}` : ''}
+                <span class="reminder-text">
+                  <span class="pill pill-priority pill-${t.priority.toLowerCase()}">${t.priority}</span>
+                  &nbsp;${escHtml(t.title)}
+                  ${t.deadline ? ` — due <b>${formatDate(t.deadline)}</b>` : ''}
+                  ${t.pending_on ? ` · ${escHtml(t.pending_on)}` : ''}
+                </span>
+                <button class="reminder-dismiss" onclick="dismissReminder(${t.id})" title="Hide until tomorrow">✕</button>
               </li>`).join('')}
           </ul>
         </div>
