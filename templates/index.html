@@ -1299,7 +1299,7 @@ function renderAnalytics() {
   const oldTasks = allTasks.filter(t => {
     if (!t.created_at) return false;
     const tDate = new Date(t.created_at); tDate.setHours(0,0,0,0);
-    return tDate < sevenDaysAgo;
+    return tDate <= sevenDaysAgo;
   }).length;
   document.getElementById('ta-old-tasks').textContent = oldTasks;
   const oldPct = total > 0 ? ((oldTasks / total) * 100).toFixed(0) : 0;
@@ -1320,7 +1320,6 @@ function renderAnalytics() {
   // Bucket tasks by created_at
   const isWeek = _taBucket === 'week';
   const N = isWeek ? 12 : 30;  // 12 weeks (~3 months) or 30 days
-  const today = new Date(); today.setHours(0,0,0,0);
 
   const buckets = [];
   for (let i = N - 1; i >= 0; i--) {
